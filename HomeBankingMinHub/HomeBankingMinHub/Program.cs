@@ -30,12 +30,9 @@ namespace HomeBankingMinHub
                     var logger = services.GetRequiredService<ILogger<Program>>();
                     logger.LogError(ex, "Ha ocurrido un error al enviar la info a la base de datos");
                 }
-
             }
-
             host.Run();
         }
-
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>

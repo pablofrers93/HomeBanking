@@ -9,7 +9,7 @@ namespace HomeBankingMinHub.Models
     public class DbInitializer
     {
         public static void Initialize(HomeBankingContext context)
-        {
+        { 
             if (!context.Clients.Any())
             {
                 var clients = new Client[]
@@ -35,7 +35,6 @@ namespace HomeBankingMinHub.Models
                 }
                 context.SaveChanges();
             }
-            
             if (!context.Accounts.Any())
             {
                 var clientes = context.Clients.ToList();
@@ -52,7 +51,7 @@ namespace HomeBankingMinHub.Models
                             {
                                 ClientId = accountClient.Id,
                                 CreationDate = DateTime.Now,
-                                Number = "VIN" + numberAccount,
+                                Number = "VIN00" + numberAccount,
                                 Balance = rnd.Next(1000, 50000)
                             };
                             context.Accounts.Add(account);
@@ -62,6 +61,24 @@ namespace HomeBankingMinHub.Models
                     
                 }           
                 context.SaveChanges();
+            }
+            if (!context.Transactions.Any())
+            {
+                var account1 = context.Accounts.FirstOrDefault(c => c.Number == "VIN0");
+                if (account1 != null)
+                {
+                    var transactions = new Transaction[]
+                    {
+                        new Transaction { AccountId= account1.Id, Amount = 10000, Date= DateTime.Now.AddHours(-5), Description = "Acreditación sueldo Agosto", Type = TransactionType.CREDIT.ToString() },
+                        new Transaction { AccountId= account1.Id, Amount = -2000, Date= DateTime.Now.AddHours(-6), Description = "Debito cajero automatico Banco Provincia", Type = TransactionType.DEBIT.ToString() },
+                        new Transaction { AccountId= account1.Id, Amount = -3000, Date= DateTime.Now.AddHours(-7), Description = "Debito cajero automático Banco Nación", Type = TransactionType.DEBIT.ToString() },
+                    };
+                    foreach (Transaction transaction in transactions)
+                    {
+                        context.Transactions.Add(transaction);
+                    }
+                    context.SaveChanges();
+                }
             }
         }
     }

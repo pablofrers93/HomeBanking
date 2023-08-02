@@ -2,8 +2,6 @@ var app = new Vue({
     el:"#app",
     data:{
         clientInfo: {},
-        loans: [],
-        accounts: [],
         error: null
     },
     methods:{
@@ -11,9 +9,6 @@ var app = new Vue({
             axios.get("/api/clients/10002")
             .then(function (response) {
                 //get client ifo
-                app.accounts = response.data.accounts.$values;
-                app.loans = response.data.loans.$values;
-                console.log(app.accounts)
                 app.clientInfo = response.data;
             })
             .catch(function (error) {

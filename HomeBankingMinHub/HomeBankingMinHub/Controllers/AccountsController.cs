@@ -50,7 +50,7 @@ namespace HomeBankingMinHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-        [HttpGet ("{id}")]
+        [HttpGet("{id}")]
         public IActionResult Get(long id)
         {
             try

@@ -1,4 +1,6 @@
 ﻿using HomeBankingMinHub.Controllers;
+using HomeBankingMinHub.Models.Entities;
+using HomeBankingMinHub.Models.Enum;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using System;
 using System.Linq;
@@ -51,7 +53,7 @@ namespace HomeBankingMinHub.Models
                             {
                                 ClientId = accountClient.Id,
                                 CreationDate = DateTime.Now,
-                                Number = "VIN00" + numberAccount,
+                                Number = "VIN-" + new Random().Next(10000, 99999).ToString(),
                                 Balance = rnd.Next(1000, 50000)
                             };
                             context.Accounts.Add(account);

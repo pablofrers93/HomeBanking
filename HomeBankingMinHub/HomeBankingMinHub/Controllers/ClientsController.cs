@@ -1,10 +1,14 @@
 ﻿using HomeBankingMinHub.Models;
-using HomeBankingMinHub.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using HomeBankingMinHub.Models.Entities;
+using HomeBankingMinHub.Repositories.Interfaces;
+using System.Security.Principal;
+using Microsoft.AspNetCore.Authorization;
+using HomeBankingMinHub.Models.Enum;
 
 namespace HomeBankingMinHub.Controllers
 {
@@ -13,10 +17,18 @@ namespace HomeBankingMinHub.Controllers
     public class ClientsController : ControllerBase
     {
         private IClientRepository _clientRepository;
-        public ClientsController(IClientRepository clientRepository)
+        private AccountsController _accountsController;
+        private CardsController _cardsController;
+        public ClientsController(IClientRepository clientRepository,
+                                 AccountsController accountsController,
+                                 CardsController cardsController)
         {
             _clientRepository = clientRepository;
+            _accountsController = accountsController;
+            _cardsController = cardsController;
         }
+
+        // El siguiente método devuelve un IActionResult con una lista de todos los clientes en nuestro home banking usando una lista de ClientDTO.
         [HttpGet]
         public IActionResult Get()
         {
@@ -68,6 +80,8 @@ namespace HomeBankingMinHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        // El siguiente método recibe un clientId y devuelve un IActionResult con una instancia de ClientDTO.
         [HttpGet("{id}")]
         public IActionResult Get(long id)
         {
@@ -118,6 +132,8 @@ namespace HomeBankingMinHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        // El siguiente método devuelve un IActionResult con una instancia de ClientDTO del cliente logueado actualmente.
         [HttpGet("current")]
         public IActionResult GetCurrent()
         {
@@ -177,6 +193,8 @@ namespace HomeBankingMinHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        // Método para registrar cliente y crearle su primera cuenta
         [HttpPost]
         public IActionResult Post([FromBody] Client client)
         {
@@ -205,6 +223,9 @@ namespace HomeBankingMinHub.Controllers
                 };
 
                 _clientRepository.Save(newClient);
+
+                _accountsController.Post(newClient.Id);
+
                 return Created("", newClient);
 
             }
@@ -212,6 +233,147 @@ namespace HomeBankingMinHub.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        // El siguiente método realiza las validaciones solicitadas para agregar una nueva tarjeta.
+        // Generada la instancia de Card se guarda con el CardsController y se obtiene newCardDTO para enviarlo al front.
+        [HttpPost("current/cards")]
+        public IActionResult PostCards([FromBody] Card card)
+        {
+            try
+            {
+                string email = User.FindFirst("Client") != null ? User.FindFirst("Client").Value : string.Empty;
+                if (email == string.Empty)
+                {
+                    return NotFound();
+                }
+
+                Client client = _clientRepository.FindByEmail(email);
+
+                int typeCardCount = client.Cards.Where(c => c.Type == card.Type).Count();
+                if (typeCardCount > 2)
+                {
+                    return StatusCode(403, "Ya tiene 3 tarjetas de credito o debito");
+                }
+                if (card.Color != CardColor.GOLD.ToString() && card.Color != CardColor.SILVER.ToString() && card.Type != CardColor.SILVER.ToString())
+                {
+                    return BadRequest("El color de tarjeta no es valido");
+                }
+                int sameCardCount = client.Cards.Where(c => c.Color == card.Color && c.Type == card.Type).Count();
+                if (sameCardCount == 1)
+                {
+                    return StatusCode(403, "Ya tiene esa tarjeta del mismo tipo y color");
+                }
+
+                Card newCard = new Card
+                {
+                    CardHolder = client.FirstName + " " + client.LastName,
+                    Type = card.Type,
+                    Color = card.Color,
+                    Number = new Random().Next(1000, 9999).ToString() + "-" +
+                                             new Random().Next(1000, 9999).ToString() + "-" +
+                                             new Random().Next(1000, 9999).ToString() + "-" +
+                                             new Random().Next(1000, 9999).ToString(),
+                    Cvv = new Random().Next(100, 999),
+                    FromDate = DateTime.Now,
+                    ThruDate = DateTime.Now.AddYears(4),
+                    ClientId = client.Id
+                };
+
+                var newCardDTO = _cardsController.Post(newCard);
+                if (newCard == null)
+                {
+                    return StatusCode(500, "Error al cargar la tarjeta");
+                }
+
+                return Created("", newCardDTO);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        // El siguiente método realiza las validaciones solicitadas para agregar una nueva cuenta al cliente logueado actualmente.
+        // Se envía al AccountsController el clientId para generar y guardar la cuenta
+        // y se obtiene una instancia de AccountDTO para envíar al front.
+        [HttpPost("current/accounts")]
+        [Authorize]
+        public IActionResult PostAccounts()
+        {
+            try
+            {
+                string email = User.FindFirst("Client") != null ? User.FindFirst("Client").Value : string.Empty;
+                if (email == string.Empty)
+                {
+                    return NotFound();
+                }
+                Client client = _clientRepository.FindByEmail(email);
+                if (client == null)
+                {
+                    return NotFound();
+                }
+                if (client.Accounts.Count > 2)
+                {
+                    return StatusCode(403, "Prohibido. El cliente ya tiene 3 cuentas registradas.");
+                }
+
+                var account = _accountsController.Post(client.Id);
+                if (account == null)
+                {
+                    return StatusCode(500, "Error al crear la cuenta");
+                }
+                return Created("", account);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpGet("current/accounts")]
+        public IActionResult GetAccounts()
+        {
+            try
+            {
+                return GetClientProperty(client => client.Accounts);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        [HttpGet("current/cards")]
+        public IActionResult GetCards()
+        {
+            try
+            {
+                return GetClientProperty(client => client.Cards);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        private IActionResult GetClientProperty(Func<Client, IEnumerable<object>> propertySelector)
+        {
+            string email = User.FindFirst("Client")?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                return NotFound();
+            }
+
+            Client client = _clientRepository.FindByEmail(email);
+            if (client == null)
+            {
+                return NotFound();
+            }
+
+            var propertyValue = propertySelector(client) 
+                ;
+
+            return Ok(propertyValue);
         }
     }
 }

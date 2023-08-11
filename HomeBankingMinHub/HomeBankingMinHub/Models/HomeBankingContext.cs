@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using HomeBankingMinHub.Models.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomeBankingMinHub.Models
 {

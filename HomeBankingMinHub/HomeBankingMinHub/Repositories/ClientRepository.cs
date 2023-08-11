@@ -1,4 +1,6 @@
 ﻿using HomeBankingMinHub.Models;
+using HomeBankingMinHub.Models.Entities;
+using HomeBankingMinHub.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;

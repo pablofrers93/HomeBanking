@@ -1,10 +1,10 @@
 ﻿using HomeBankingMinHub.Models;
-using HomeBankingMinHub.Repositories;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using HomeBankingMinHub.Models.Entities;
+using HomeBankingMinHub.Repositories.Interfaces;
 
 namespace HomeBankingMinHub.Controllers
 {
@@ -50,7 +50,7 @@ namespace HomeBankingMinHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-        [HttpGet("{id}")]
+        [HttpGet("accounts/{id}")]
         public IActionResult Get(long id)
         {
             try
@@ -76,6 +76,36 @@ namespace HomeBankingMinHub.Controllers
                     }).ToList()
                 };
                 return Ok(accountDTO);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public IActionResult Post(long clientId)
+        {
+            try
+                {
+                Account newAccount = new Account
+                {
+                    ClientId = clientId,
+                    CreationDate = DateTime.Now,
+                    Balance = 0,
+                    Number = "VIN-" + new Random().Next(100000, 999999).ToString()
+                };
+                _accountRepository.Save(newAccount);
+
+                AccountDTO newAccountDTO = new AccountDTO
+                {
+                    Id = newAccount.Id,
+                    Balance = newAccount.Balance,
+                    CreationDate = newAccount.CreationDate,
+                    Number = newAccount.Number
+                };
+                // return Created("", newAccount);
+                return Created("", newAccountDTO);
             }
             catch (Exception ex)
             {

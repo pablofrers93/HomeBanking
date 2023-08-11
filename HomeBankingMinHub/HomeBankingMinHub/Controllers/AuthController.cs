@@ -1,5 +1,5 @@
-﻿using HomeBankingMinHub.Models;
-using HomeBankingMinHub.Repositories;
+﻿using HomeBankingMinHub.Models.Entities;
+using HomeBankingMinHub.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;

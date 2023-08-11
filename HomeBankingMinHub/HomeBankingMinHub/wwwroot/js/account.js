@@ -2,19 +2,17 @@ var app = new Vue({
     el:"#app",
     data:{
         accountInfo: {},
-        //error: null,
+        //error: null
         errorToats: null,
         errorMsg: null,
     },
     methods:{
-        getData: function () {
-            console.log("entrando en el metodo getData")
+        getData: function(){
             const urlParams = new URLSearchParams(window.location.search);
             const id = urlParams.get('id');
             axios.get(`/api/accounts/${id}`)
             .then(function (response) {
                 //get client ifo
-                console.log("dentro de function response..")
                 app.accountInfo = response.data;
                 app.accountInfo.transactions.$values.sort((a,b) => parseInt(b.id - a.id))
             })
@@ -42,4 +40,3 @@ var app = new Vue({
         this.getData();
     }
 })
-

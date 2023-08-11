@@ -1,5 +1,7 @@
+using HomeBankingMinHub.Controllers;
 using HomeBankingMinHub.Models;
 using HomeBankingMinHub.Repositories;
+using HomeBankingMinHub.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -22,21 +24,14 @@ namespace HomeBankingMinHub
         {
             Configuration = configuration;
         }
-
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
-            services.AddControllers().AddJsonOptions(x =>
-                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
-            services.AddDbContext<HomeBankingContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("HomeBankingConexion")));
-            services.AddScoped<IClientRepository, ClientRepository>();
-            services.AddScoped<IAccountRepository, AccountRepository>();
             //inyecciones para autenticacion
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme) 
-                .AddCookie(options=>
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
                 {
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
                     options.LoginPath = new PathString("/index.html");
@@ -46,7 +41,15 @@ namespace HomeBankingMinHub
             {
                 options.AddPolicy("ClientOnly", policy => policy.RequireClaim("Client"));
             });
-
+            services.AddRazorPages();
+            services.AddControllers().AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
+            services.AddDbContext<HomeBankingContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("HomeBankingConexion")));
+            services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<IAccountRepository, AccountRepository>();
+            services.AddScoped<ICardRepository, CardRepository>();
+            services.AddScoped<AccountsController>();
+            services.AddScoped<CardsController>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

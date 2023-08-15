@@ -48,8 +48,11 @@ namespace HomeBankingMinHub
             services.AddScoped<IClientRepository, ClientRepository>();
             services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
+            services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<AccountsController>();
             services.AddScoped<CardsController>();
+            services.AddScoped<TransactionsController>();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

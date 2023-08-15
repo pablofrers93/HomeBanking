@@ -9,6 +9,7 @@ using HomeBankingMinHub.Repositories.Interfaces;
 using System.Security.Principal;
 using Microsoft.AspNetCore.Authorization;
 using HomeBankingMinHub.Models.Enum;
+using System.Text.RegularExpressions;
 
 namespace HomeBankingMinHub.Controllers
 {
@@ -200,13 +201,12 @@ namespace HomeBankingMinHub.Controllers
         {
             try
             {
-                // Validación de datos
-                if (String.IsNullOrEmpty(client.Email) ||
-                    String.IsNullOrEmpty(client.Password) ||
-                    String.IsNullOrEmpty(client.FirstName) ||
-                    String.IsNullOrEmpty(client.LastName))
-                    return StatusCode(403, "Datos inválidos");
-
+                IActionResult validationStatus = ValidateClient(client);
+                if (validationStatus != null)
+                {
+                    return validationStatus;
+                }
+                
                 // Buscamos si el cliente existe
                 Client user = _clientRepository.FindByEmail(client.Email);
                 if (user != null)
@@ -234,6 +234,58 @@ namespace HomeBankingMinHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        // Me todo que realiza todas las validaciones necesarias para el registro de un nuevo cliente. 
+        // Se llaman a diferentes métodos para realizar las validaciones solicitadas con los datos ingresados sobre un cliente.
+        private IActionResult ValidateClient(Client client)
+        {
+            // Validación de datos
+            if (String.IsNullOrEmpty(client.Email) ||
+                String.IsNullOrEmpty(client.Password) ||
+                String.IsNullOrEmpty(client.FirstName) ||
+                String.IsNullOrEmpty(client.LastName))
+                return StatusCode(403, "Datos inválidos");
+
+            if (!ContainsOnlyLetters(client.FirstName) || !ContainsOnlyLetters(client.FirstName))
+            {
+                if (!ContainsOnlyLetters(client.FirstName))
+                {
+                    return StatusCode(403, "El nombre no puede contener numeros o caracteres especiales");
+                }
+                else
+                {
+                    return StatusCode(403, "El apellido no puede contener numeros o caracteres especiales");
+                }
+            }
+            else if (client.FirstName.Length < 3 || client.LastName.Length < 3)
+            {
+                if (client.FirstName.Length < 3)
+                {
+                    return StatusCode(403, "El nombre debe contener 3 o mas letras");
+                }
+                else
+                {
+                    return StatusCode(403, "El apellido debe contener 3 o mas letras");
+                }
+            }
+            else if (!ValidatePassword(client.Password) || client.Password.Length < 8)
+            {
+                if (!ValidatePassword(client.Password))
+                {
+                    return StatusCode(403, "La contraseña debe contener al menos 1 mayuscula, 1 minuscula y 1 numero");
+                }
+                else
+                {
+                    return StatusCode(403, "La contraseña debe tener al menos 8 caracteres");
+                }
+            }
+            else if (!ValidateEmail(client.Email))
+            {
+                return StatusCode(403, "El email no tiene el formato correcto");
+            }
+            return null;
+        }
+
 
         // El siguiente método realiza las validaciones solicitadas para agregar una nueva tarjeta.
         // Generada la instancia de Card se guarda con el CardsController y se obtiene newCardDTO para enviarlo al front.
@@ -319,6 +371,8 @@ namespace HomeBankingMinHub.Controllers
                 }
 
                 var account = _accountsController.Post(client.Id);
+                var accounts = client.Accounts;
+
                 if (account == null)
                 {
                     return StatusCode(500, "Error al crear la cuenta");
@@ -329,7 +383,6 @@ namespace HomeBankingMinHub.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
-
         }
 
         [HttpGet("current/accounts")]
@@ -356,6 +409,8 @@ namespace HomeBankingMinHub.Controllers
                 throw;
             }
         }
+
+        // Metodo que recibe una función lambda, obtiene el cliente logueado y le asigna a propertyValue la funcion lambda con el cliente actual.
         private IActionResult GetClientProperty(Func<Client, IEnumerable<object>> propertySelector)
         {
             string email = User.FindFirst("Client")?.Value;
@@ -370,10 +425,33 @@ namespace HomeBankingMinHub.Controllers
                 return NotFound();
             }
 
-            var propertyValue = propertySelector(client) 
-                ;
+            var propertyValue = propertySelector(client);
 
             return Ok(propertyValue);
+        }
+
+        // Devuelve bool usando una expresion regular para evaluar si el string recibido solo contiene letras.
+        private bool ContainsOnlyLetters(string input)
+        {
+            return Regex.IsMatch(input, @"^[a-zA-Z]+$");
+        }
+
+        // Devuelve bool usando expresiones regulares para evaluar si el string recibido contiene al menos 1 mayuscula, minuscula y numero)
+        private bool ValidatePassword(string input)
+        {
+            bool containsUpperCase = Regex.IsMatch(input, "[A-Z]");
+            bool containsLowerCase = Regex.IsMatch(input, "[a-z]");
+            bool containsNumber = Regex.IsMatch(input, @"\d");
+
+            return containsUpperCase && containsLowerCase && containsNumber;
+        }
+
+        // Devuelve bool usando expresion regular para validar si un email tiene el formato correcto = "nombreUsuario12@proveedorServicio.com"
+        private bool ValidateEmail(string email)
+        {
+            string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$";
+
+            return Regex.IsMatch(email, pattern);
         }
     }
 }

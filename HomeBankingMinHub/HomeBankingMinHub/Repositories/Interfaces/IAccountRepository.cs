@@ -10,5 +10,6 @@ namespace HomeBankingMinHub.Repositories.Interfaces
         Account FindById(long id);
         IEnumerable<Account> GetAccountsByClient(long clientId);
         Account GetLastAccountRegistered();
+        Account FindByNumber(string number);
     }
 }

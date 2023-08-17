@@ -87,9 +87,9 @@ namespace HomeBankingMinHub.Models
                 //crearemos 3 prestamos Hipotecario, Personal y Automotriz
                 var loans = new Loan[]
                 {
-                    new Loan { Name = "Hipotecario", MaxAmount = 500000, Payments = "12,24,36,48,60" },
-                    new Loan { Name = "Personal", MaxAmount = 100000, Payments = "6,12,24" },
-                    new Loan { Name = "Automotriz", MaxAmount = 300000, Payments = "6,12,24,36" },
+                    new Loan { Name = LoanType.HIPOTECARIO.ToString(), MaxAmount = 500000, Payments = "12,24,36,48,60" },
+                    new Loan { Name = LoanType.PERSONAL.ToString(), MaxAmount = 100000, Payments = "6,12,24" },
+                    new Loan { Name = LoanType.AUTOMOTRIZ.ToString(), MaxAmount = 300000, Payments = "6,12,24,36" },
                 };
 
                 foreach (Loan loan in loans)
